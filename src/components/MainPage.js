@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import * as booksService from "../BooksAPI";
 import { Link } from "react-router-dom";
 import { BookShelf } from "./BookShelf";
+import { persistBooks } from "../helpers/persister";
 
 export function MainPage() {
   const [showSearchPage, setShowSearchpage] = useState(false);
@@ -28,9 +29,7 @@ export function MainPage() {
         setBooks(books);
         setErrorMessage("");
         // persist values from mainpage to searchpage
-        const persister = {};
-        books.forEach((book) => (persister[book.id] = book.shelf));
-        sessionStorage.setItem("persister", JSON.stringify(persister));
+        persistBooks(books);
       })
       .catch(() => {
         setErrorMessage("Failed to call GET getAll");
