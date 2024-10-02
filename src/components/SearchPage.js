@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import * as booksService from "../BooksAPI";
 import { Book } from "./Book";
+import { getPersister, persistBook } from "../helpers/persister";
 
 export function SearchPage() {
   const [searchText, setSearchText] = useState("");
@@ -9,6 +10,8 @@ export function SearchPage() {
   const searchDebounce = useDebounce(searchText, 500);
   const [errorMessage, setErrorMessage] = useState("No search result");
   const [isLoading, setIsLoading] = useState(false);
+  const [updateResult, setUpdateResult] = useState(0);
+
   const onSearch = (searchText) => {
     setSearchText(searchText);
     if (searchResult.length) {
@@ -16,6 +19,7 @@ export function SearchPage() {
       setSearchResult([]);
     }
   };
+
   useEffect(() => {
     if (searchDebounce) {
       setIsLoading(true);
@@ -24,15 +28,12 @@ export function SearchPage() {
         .then((searchResult) => {
           if (Array.isArray(searchResult)) {
             // apply statuses from persister
-            const persisterString = sessionStorage.getItem("persister");
-            const persister = JSON.parse(persisterString) ?? {};
-            const statusesAppliedSearchResult = searchResult.map((book) => {
-              let shelf = persister[book.id] ? persister[book.id] : "none";
-              return {
-                ...book,
-                shelf,
-              };
-            });
+            const persister = getPersister();
+            const statusesAppliedSearchResult = searchResult.map((book) => ({
+              ...book,
+              shelf: persister[book.id] ? persister[book.id] : "none",
+            }));
+            // render searchResult
             setSearchResult(statusesAppliedSearchResult);
             setErrorMessage("");
           } else {
@@ -41,13 +42,19 @@ export function SearchPage() {
         })
         .catch(() => setErrorMessage("Failed to call POST search"))
         .finally(() => setIsLoading(false));
+    } else {
+      setSearchResult([]);
+      setErrorMessage("No search result");
     }
-  }, [searchDebounce]);
+  }, [searchDebounce, updateResult]);
 
   const onShelfChanged = (book, shelf) => {
+    // persist new shelf value
+    persistBook(book, shelf);
+    // update book
     booksService
       .update(book, shelf)
-      .then(() => {})
+      .then(() => setUpdateResult(updateResult + 1))
       .catch(() => {
         setErrorMessage("Failed to call PUT update");
       });
