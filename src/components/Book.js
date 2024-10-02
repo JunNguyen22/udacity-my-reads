@@ -1,4 +1,8 @@
 export function Book({ book, onShelfChanged }) {
+  const getAuthorsString = (authors = []) => {
+    return authors.join(",");
+  };
+
   return (
     <div className="book">
       <div className="book-top">
@@ -17,9 +21,6 @@ export function Book({ book, onShelfChanged }) {
               onShelfChanged(book, event.target.value);
             }}
           >
-            <option value="none" disabled>
-              Move to...
-            </option>
             <option value="currentlyReading">Currently Reading</option>
             <option value="wantToRead">Want to Read</option>
             <option value="read">Read</option>
@@ -28,7 +29,7 @@ export function Book({ book, onShelfChanged }) {
         </div>
       </div>
       <div className="book-title">{book.title}</div>
-      <div className="book-authors">{book.authors?.[0]}</div>
+      <div className="book-authors">{getAuthorsString(book.authors)}</div>
     </div>
   );
 }
